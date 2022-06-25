@@ -1,0 +1,36 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "VgmComp/1.0.0": {
+        "dependencies": {
+          "HeatshrinkDotNet": "1.0.0"
+        },
+        "runtime": {
+          "VgmComp.dll": {}
+        }
+      },
+      "HeatshrinkDotNet/1.0.0": {
+        "runtime": {
+          "HeatshrinkDotNet.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "VgmComp/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "HeatshrinkDotNet/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
