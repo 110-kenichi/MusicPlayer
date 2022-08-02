@@ -52,7 +52,7 @@ void main() {
   SMS_zeroBGPalette();
   SMS_zeroSpritePalette();
 
-  InitFont();
+  //InitFont();
 
   /*
   //Create sin table
@@ -109,9 +109,11 @@ void ProcessGamePhase(char vblank) {
     }
     case G_PHASE_PLAYER: {
       //SMS_mapCODEBank(0);
+      
       //SMS_mapROMBank(3);
-      SMS_mapROMBank(4);
+      //SMS_mapROMBank(4);
       //SMS_mapROMBank(5);
+      
       InitVGM();
       GamePhase = G_PHASE_PLAYER2;
       break;

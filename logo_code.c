@@ -55,8 +55,7 @@ void processLogo(char vblank) /*__banked*/ {
         break;
       }
       case 3: {
-        FadeOutPalette(PhaseLocalCounter, logo_bg_pal_bin,
-        logo_bg_pal_bin_size, 0);
+        //FadeOutPalette(PhaseLocalCounter, logo_bg_pal_bin, logo_bg_pal_bin_size, 0);
         PhaseLocalCounter++;
         if (PhaseLocalCounter == 7) {
           PhaseCounter++;
