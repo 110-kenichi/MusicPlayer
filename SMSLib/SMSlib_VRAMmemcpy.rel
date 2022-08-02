@@ -1,0 +1,48 @@
+XL3
+H 9 areas 7 global symbols
+M SMSlib_VRAMmemcpy
+O -mz80
+S _ROM_bank_to_be_mapped_on_slot1 Def00FFFE
+S _ROM_bank_to_be_mapped_on_slot2 Def00FFFF
+S _SRAM_bank_to_be_mapped_on_slot2 Def00FFFC
+S .__.ABS. Def000000
+S _SMS_SRAM Def008000
+A _CODE size 54 flags 0 addr 0
+S _SMS_VRAMmemcpy_brief Def000031
+S _SMS_VRAMmemcpy Def000000
+A _DATA size 0 flags 0 addr 0
+A _INITIALIZED size 0 flags 0 addr 0
+A _DABS size 0 flags 8 addr 0
+A _HOME size 0 flags 0 addr 0
+A _GSINIT size 0 flags 0 addr 0
+A _GSFINAL size 0 flags 0 addr 0
+A _INITIALIZER size 0 flags 0 addr 0
+A _CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 00
+T 00 00 00 DD E5 DD 21 00 00 DD 39 DD 6E 04 DD 7E
+R 00 00 00 00
+T 0D 00 00 05 CB F7 67 CF DD 6E 06 DD 66 07 DD 7E
+R 00 00 00 00
+T 1A 00 00 08 B7 47 DD 7E 09 28 01 3C
+R 00 00 00 00
+T 23 00 00
+R 00 00 00 00
+T 23 00 00 0E BE
+R 00 00 00 00
+T 25 00 00
+R 00 00 00 00
+T 25 00 00 ED A3 C2 25 00 3D C2 25 00 DD E1 C9
+R 00 00 00 00 00 06 00 00 00 0A 00 00
+T 31 00 00
+R 00 00 00 00
+T 31 00 00 DD E5 DD 21 00 00 DD 39 DD 6E 04 DD 7E
+R 00 00 00 00
+T 3E 00 00 05 CB F7 67 CF DD 6E 06 DD 66 07 DD 46
+R 00 00 00 00
+T 4B 00 00 08
+R 00 00 00 00
+T 4C 00 00
+R 00 00 00 00
+T 4C 00 00 ED A3 C2 4C 00 DD E1 C9
+R 00 00 00 00 00 06 00 00

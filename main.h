@@ -9,6 +9,9 @@
 #include "Video.h"
 #include "Types.h"
 
+#define CODE_BANK_S 1
+#define DATA_BANK_S 3
+
 extern const FixedF16 SIN_TABLE[128];
 
 extern unsigned char FreeSpace[0x400];

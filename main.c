@@ -39,8 +39,7 @@ Character Characters[128];
 void ProcessGamePhase(char vblank);
 void InitVGM();
 
-#define CODE_BANK_S 1
-#define DATA_BANK_S 4
+
 
 void main() {
   SMS_init();
@@ -102,17 +101,13 @@ void VGMUpdate();
 void ProcessGamePhase(char vblank) {
   switch (GamePhase) {
     case G_PHASE_LOGO: {
-      //SMS_mapCODEBank(1);
-      SMS_mapROMBank(2);
+      SMS_mapCODEBank(CODE_BANK_S + 0);
+      SMS_mapROMBank(DATA_BANK_S + 0);
       processLogo(vblank);
       break;
     }
     case G_PHASE_PLAYER: {
-      //SMS_mapCODEBank(0);
-      
-      //SMS_mapROMBank(3);
-      //SMS_mapROMBank(4);
-      //SMS_mapROMBank(5);
+      SMS_mapCODEBank(CODE_BANK_S + 1);
       
       InitVGM();
       GamePhase = G_PHASE_PLAYER2;

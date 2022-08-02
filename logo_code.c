@@ -1,4 +1,4 @@
-//#pragma codeseg BANK_C1
+#pragma codeseg BANK_C1
 
 #include "logo_tile.h"
 #include "main.h"

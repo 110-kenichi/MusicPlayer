@@ -1,0 +1,58 @@
+XL3
+H 9 areas 9 global symbols
+M SMSlib_paletteAdv
+O -mz80
+S _ROM_bank_to_be_mapped_on_slot1 Def00FFFE
+S _ROM_bank_to_be_mapped_on_slot2 Def00FFFF
+S _SRAM_bank_to_be_mapped_on_slot2 Def00FFFC
+S .__.ABS. Def000000
+S _SMS_SRAM Def008000
+A _CODE size 56 flags 0 addr 0
+S _SMS_zeroBGPalette Def000017
+S _SMS_loadSpritePaletteHalfBrightness Def00002B
+S _SMS_zeroSpritePalette Def000042
+S _SMS_loadBGPaletteHalfBrightness Def000000
+A _DATA size 0 flags 0 addr 0
+A _INITIALIZED size 0 flags 0 addr 0
+A _DABS size 0 flags 8 addr 0
+A _HOME size 0 flags 0 addr 0
+A _GSINIT size 0 flags 0 addr 0
+A _GSFINAL size 0 flags 0 addr 0
+A _INITIALIZER size 0 flags 0 addr 0
+A _CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 00
+T 00 00 00 11 00 C0 0E BF F3 ED 59 ED 51 FB 06 10
+R 00 00 00 00
+T 0D 00 00
+R 00 00 00 00
+T 0D 00 00 7E 0F E6 15 D3 BE 23 10 F7 C9
+R 00 00 00 00
+T 17 00 00
+R 00 00 00 00
+T 17 00 00 11 00 C0 0E BF F3 ED 59 ED 51 FB 06 10
+R 00 00 00 00
+T 24 00 00 AF
+R 00 00 00 00
+T 25 00 00
+R 00 00 00 00
+T 25 00 00 D3 BE 00 10 FB C9
+R 00 00 00 00
+T 2B 00 00
+R 00 00 00 00
+T 2B 00 00 11 10 C0 0E BF F3 ED 59 ED 51 FB 06 10
+R 00 00 00 00
+T 38 00 00
+R 00 00 00 00
+T 38 00 00 7E 0F E6 15 D3 BE 23 10 F7 C9
+R 00 00 00 00
+T 42 00 00
+R 00 00 00 00
+T 42 00 00 11 10 C0 0E BF F3 ED 59 ED 51 FB 06 10
+R 00 00 00 00
+T 4F 00 00 AF
+R 00 00 00 00
+T 50 00 00
+R 00 00 00 00
+T 50 00 00 D3 BE 00 10 FB C9
+R 00 00 00 00

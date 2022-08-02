@@ -1,0 +1,34 @@
+XL3
+H 9 areas 7 global symbols
+M SMSlib_loadTiles
+O -mz80
+S _ROM_bank_to_be_mapped_on_slot1 Def00FFFE
+S _ROM_bank_to_be_mapped_on_slot2 Def00FFFF
+S _SRAM_bank_to_be_mapped_on_slot2 Def00FFFC
+S .__.ABS. Def000000
+S _SMS_SRAM Def008000
+S _SMS_crt0_RST08 Ref000000
+A _CODE size 32 flags 0 addr 0
+S _SMS_loadTiles Def000000
+A _DATA size 0 flags 0 addr 0
+A _INITIALIZED size 0 flags 0 addr 0
+A _DABS size 0 flags 8 addr 0
+A _HOME size 0 flags 0 addr 0
+A _GSINIT size 0 flags 0 addr 0
+A _GSFINAL size 0 flags 0 addr 0
+A _INITIALIZER size 0 flags 0 addr 0
+A _CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 00
+T 00 00 00 21 04 00 39 7E 23 66 6F 29 29 29 29 29
+R 00 00 00 00
+T 0D 00 00 CB F4 CF FD 21 06 00 FD 39 FD 4E 00 FD
+R 00 00 00 00
+T 1A 00 00 46 01 FD 21 02 00 FD 39 FD 5E 00 FD 56
+R 00 00 00 00
+T 27 00 00 01
+R 00 00 00 00
+T 28 00 00
+R 00 00 00 00
+T 28 00 00 1A D3 BE 13 0B 78 B1 20 F7 C9
+R 00 00 00 00

@@ -1,0 +1,40 @@
+XL3
+H 9 areas B global symbols
+M SMSlib_twosprites
+O -mz80
+S _ROM_bank_to_be_mapped_on_slot1 Def00FFFE
+S _ROM_bank_to_be_mapped_on_slot2 Def00FFFF
+S _SpriteTableY Ref000000
+S _SRAM_bank_to_be_mapped_on_slot2 Def00FFFC
+S _spritesTileOffset Ref000000
+S .__.ABS. Def000000
+S _SpriteTableXN Ref000000
+S _SMS_SRAM Def008000
+S _spritesWidth Ref000000
+S _SpriteNextFree Ref000000
+A _CODE size 3F flags 0 addr 0
+S _SMS_addTwoAdjoiningSprites Def000000
+A _DATA size 0 flags 0 addr 0
+A _INITIALIZED size 0 flags 0 addr 0
+A _DABS size 0 flags 8 addr 0
+A _HOME size 0 flags 0 addr 0
+A _GSINIT size 0 flags 0 addr 0
+A _GSFINAL size 0 flags 0 addr 0
+A _INITIALIZER size 0 flags 0 addr 0
+A _CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 00
+T 00 00 00 3A 00 00 FE 3F D0 4F 06 00 21 02 00 39
+R 00 00 00 00 02 04 09 00
+T 0D 00 00 5E 23 7E FE D1 C8 23 56 21 00 00 09 3D
+R 00 00 00 00 02 0C 02 00
+T 1A 00 00 77 23 77 21 00 00 09 09 73 23 72 3A
+R 00 00 00 00 02 07 06 00
+T 26 00 00 00 00 83 38 0F 23 77 3A 00 00 82 23 77
+R 00 00 00 00 02 03 08 00 02 0B 04 00
+T 33 00 00 79 C6 02 32 00 00 C9
+R 00 00 00 00 02 07 09 00
+T 3A 00 00
+R 00 00 00 00
+T 3A 00 00 21 00 00 34 C9
+R 00 00 00 00 02 04 09 00

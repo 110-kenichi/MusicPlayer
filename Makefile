@@ -14,10 +14,12 @@ all: depend $(PROGRAM)
 $(PROGRAM): crt0b_sms.rel $(OBJS)
 	$(CC) -o MuPlayer.ihx -mz80 --no-std-crt0 --data-loc 0xC000\
 	 SMSLib/SMSlib.lib\
-	 -Wl-b_BANK_D1=0x28000\
-	 -Wl-b_BANK_MD1=0x38000\
-	 -Wl-b_BANK_MD2=0x48000\
-	 -Wl-b_BANK_MD3=0x58000\
+	 -Wl-b_BANK_C1=0x14000\
+	 -Wl-b_BANK_C2=0x24000\
+	 -Wl-b_BANK_D1=0x38000\
+	 -Wl-b_BANK_MD1=0x48000\
+	 -Wl-b_BANK_MD2=0x58000\
+	 -Wl-b_BANK_MD3=0x68000\
 	 $^
 	makesms.exe MuPlayer.ihx MuPlayer.sms
 	cmd.exe /C copy.bat

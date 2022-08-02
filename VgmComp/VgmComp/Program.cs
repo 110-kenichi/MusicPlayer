@@ -83,21 +83,30 @@ for (int i = 0; i < args.Length; i++)
 
     //Compress
     byte[] comp;
-    compressVgmFile(convVgmData, out comp);
+    bool compressed = false;
+    if (convVgmData.Count > 0xff00)
+    {
+        compressed = true;
+        compressVgmFile(convVgmData, out comp);
+    }
+    else
+        comp = convVgmData.ToArray();
 
     //Output
-    writeCompressedVgmFile(vgmfile, comp);
+    writeCompressedVgmFile(vgmfile, comp, compressed);
 }
 
-static void writeCompressedVgmFile(string vgmfile, byte[] comp)
+static void writeCompressedVgmFile(string vgmfile, byte[] comp, bool compressed)
 {
     StringBuilder sb = new StringBuilder();
     string mname = Path.GetFileNameWithoutExtension(vgmfile);
     mname = Regex.Replace(mname, @"[\s()[\]\-+]", "_", RegexOptions.Compiled);
 
+    sb.AppendLine("extern const unsigned char " + mname + "_Compressed;");
     sb.AppendLine("extern const unsigned short " + mname + "_Size;");
     sb.AppendLine("extern const unsigned char " + mname + "_Data[];");
     sb.AppendLine();
+    sb.AppendLine("const unsigned char " + mname + "_Compressed = " + (compressed ? 1 : 0) + ";");
     sb.AppendLine("const unsigned short " + mname + "_Size = " + comp.Length.ToString() + ";");
     sb.AppendLine("const unsigned char " + mname + "_Data[] = {");
     for (var i = 0; i < comp.Length; i += 16)
