@@ -39,7 +39,6 @@ struct OutputData output_data_opll[] =
     {0, 0x0, 0xf, 0, 0},
     {0, 0x0, 0xf, 0, 0},
     {0, 0x0, 0xf, 0, 0},
-    {0, 0x0, 0xf, 0, 0}
 };
 
 static unsigned char time_fps = 00;
@@ -88,17 +87,17 @@ static void InitTime()
 
 inline static void PrintTime()
 {
-    SMS_setNextTileatXY(25, 17);
-    SMS_setTile(time_min_sec.min1 + DATA_ROOT + FONT_TILES_NO_S);
     SMS_setNextTileatXY(26, 17);
+    SMS_setTile(time_min_sec.min1 + DATA_ROOT + FONT_TILES_NO_S);
+    SMS_setNextTileatXY(27, 17);
     SMS_setTile(time_min_sec.min0 + DATA_ROOT + FONT_TILES_NO_S);
 
-    SMS_setNextTileatXY(27, 17);
+    SMS_setNextTileatXY(28, 17);
     SMS_setTile(':' - 33 + FONT_TILES_NO_S);
 
-    SMS_setNextTileatXY(28, 17);
-    SMS_setTile(time_min_sec.sec1 + DATA_ROOT + FONT_TILES_NO_S);
     SMS_setNextTileatXY(29, 17);
+    SMS_setTile(time_min_sec.sec1 + DATA_ROOT + FONT_TILES_NO_S);
+    SMS_setNextTileatXY(30, 17);
     SMS_setTile(time_min_sec.sec0 + DATA_ROOT + FONT_TILES_NO_S);    
 }
 
@@ -378,16 +377,16 @@ void VGMUpdate()
                         {
                             case 0xe:
                                 rhythm_mode = wdata & 0b100000;
-                                if(wdata & 0x1)
-                                    output_data_opll[8].volume = (wdata & 0xf);
-                                if(wdata & 0x2)
-                                    output_data_opll[9].volume = (wdata & 0xf);
-                                if(wdata & 0x4)
-                                    output_data_opll[10].volume = (wdata & 0xf);
-                                if(wdata & 0x8)
-                                    output_data_opll[11].volume = (wdata & 0xf);
-                                if(wdata & 0x16)
-                                    output_data_opll[12].volume = (wdata & 0xf);
+                                if(wdata & 0x16)    //BD
+                                    output_data_opll[7].volume = output_data_opll[7].keyon;
+                                if(wdata & 0x8)     //SD
+                                    output_data_opll[8].volume = output_data_opll[8].keyon;
+                                if(wdata & 0x1)     //HH
+                                    output_data_opll[9].volume = output_data_opll[9].keyon;
+                                if(wdata & 0x2)     //TCYM
+                                    output_data_opll[10].volume = output_data_opll[10].keyon;
+                                if(wdata & 0x4)     //TOM
+                                    output_data_opll[11].volume = output_data_opll[11].keyon;
                                 break;
                                 //key on
                             case 0x20:
@@ -414,34 +413,34 @@ void VGMUpdate()
                                 break;
                             case 0x36:
                                 //BD
-                                if(!rhythm_mode)
+                                if(rhythm_mode)
                                 {
+                                    output_data_opll[7].keyon = (wdata & 0xf);
+                                }else{
                                     if(wdata & 0b00010000)
                                         output_data_opll[6].keyon = (wdata & 0xf);
-                                }else{
-                                    output_data_opll[8].keyon = (wdata & 0xf);
                                 }
                                 break;
                             case 0x37:
                                 //SD,HH
-                                if(!rhythm_mode)
+                                if(rhythm_mode)
                                 {
+                                    output_data_opll[8].keyon = (wdata & 0xf);
+                                    output_data_opll[9].keyon = wdata >> 4;
+                                }else{
                                     if(wdata & 0b00010000)
                                         output_data_opll[7].keyon = (wdata & 0xf);
-                                }else{
-                                    output_data_opll[9].keyon = (wdata & 0xf);
-                                    output_data_opll[10].keyon = wdata >> 4;
                                 }
                                 break;
                             case 0x38:
                                 //TCYM,TOM
-                                if(!rhythm_mode)
+                                if(rhythm_mode)
                                 {
+                                    output_data_opll[10].keyon = (wdata & 0xf);
+                                    output_data_opll[11].keyon = wdata >> 4;
+                                }else{
                                     if(wdata & 0b00010000)
                                         output_data_opll[8].keyon = (wdata & 0xf);
-                                }else{
-                                    output_data_opll[11].keyon = (wdata & 0xf);
-                                    output_data_opll[12].keyon = wdata >> 4;
                                 }
                                 break;
                         }
@@ -461,9 +460,13 @@ void InitVGM()
     music_current_stat = PlayerStatus_Stop;
     music_command = PlayerCommand_None;
 
+    PrintText("cccccccccccccccccccccccccccccccc",0,13);
     PrintText(music_data[music_selected_no].title,0,14);
+    PrintText("cccccccecccccccccccccccceccccccc",0,15);
+    for(int i=0;i<8;i++)
+        PrintText("d                d",7,16+i);
 
-    PrintText("TIME",24,16);
+    PrintText("TIME",25,16);
     InitTime();
     PrintTime();
 }

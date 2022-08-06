@@ -6,3 +6,4 @@ extern const unsigned char	font_pal_bin[];
 
 extern const unsigned char	font_tile_bin[];
 #define				font_tile_bin_size 2560
+
