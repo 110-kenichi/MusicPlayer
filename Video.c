@@ -138,16 +138,34 @@ void SetVBlankInterruptHandler(void (*theHandlerFunction)(void))
 void VGMUpdate();
 extern GamePhaseType GamePhase;
 
+//static unsigned short sx = 0;
+
 void VinterruptHandler()
 {
   if(GamePhase == G_PHASE_PLAYER2)
+  {
+    // SMS_setBGScrollX(255 - (sx & 0xff));
+    // sx++;
+
     VGMUpdate();
+    //SMS_setLineCounter(8);
+  }
+
   // if (!playingPcm) {
   //   PSGFrame();
   //   PSGSFXFrame();
   // }
   if (!DisableVDPProcessing) {
     if (theVBlankInterruptHandler != 0) theVBlankInterruptHandler();
+  }
+}
+
+void HinterruptHandler()
+{
+  if(GamePhase == G_PHASE_PLAYER2)
+  {
+    SMS_setBGScrollX(0);
+    //SMS_setLineCounter(128);
   }
 }
 

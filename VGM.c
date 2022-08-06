@@ -1,54 +1,18 @@
 #include "heatshrink_decoder.h"
 #include "Font.h"
 #include "main.h"
+#include "VGM.h"
 
 #pragma codeseg BANK_C2
 
-__sfr __at 0x06 IOPortOGG;
-
-__sfr __at 0x7F IOPortOPSG;
-
-__sfr __at 0xF0 IOPortOPLL1;
-__sfr __at 0xF1 IOPortOPLL2;
-
-extern const unsigned short Fantasy_Zone___12___Last_Boss_Size;
-extern const unsigned char Fantasy_Zone___12___Last_Boss_Data[];
-
-extern const unsigned short Out_Run__FM____01___Magical_Sound_Shower_Size;
-extern const unsigned char Out_Run__FM____01___Magical_Sound_Shower_Data[];
-
-extern const unsigned short Fantasy_Zone_II__FM____Fuwareak_Size;
-extern const unsigned char Fantasy_Zone_II__FM____Fuwareak_Data[];
-
-enum PlayerCommand
+struct MusicData music_data[] =
 {
-    PlayerCommand_None = 0,
-    PlayerCommand_Play = 1,
-    PlayerCommand_Stop = 2,
-};
-
-enum PlayerStatus
-{
-    PlayerStatus_Stop = 0,
-    PlayerStatus_Play = 1,
-};
-
-struct MusicData
-{
-    unsigned char bank_no;
-    unsigned char compressed;
-    unsigned short *size;
-    unsigned char *data;
-    unsigned char *title;
-};
-
-struct OutputData
-{
-    unsigned char keyon;
-    unsigned char volume;
-    unsigned char last_volume;
-    unsigned char key;
-    unsigned char last_key;
+    {DATA_BANK_S + 1, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data,
+        "1.FANTASY ZONE - LAST BOSS      "},
+    {DATA_BANK_S + 2, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data,
+        "2.OUTRUN - MAGICAL SOUND SHOWER "},
+    {DATA_BANK_S + 3, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data,
+        "3.FANTASY ZONE II - FUWAREAK    "},
 };
 
 struct OutputData output_data_psg[] =
@@ -78,17 +42,10 @@ struct OutputData output_data_opll[] =
     {0, 0x0, 0xf, 0, 0}
 };
 
-static unsigned char rhythm_mode = 0x00;
+static unsigned char time_fps = 00;
+static struct ElapseData time_min_sec;
 
-struct MusicData music_data[] =
-{
-    {DATA_BANK_S + 1, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data,
-        "FANTASY ZONE - LAST BOSS        "},
-    {DATA_BANK_S + 2, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data,
-        "OUTRUN - MAGICAL SOUND SHOWER   "},
-    {DATA_BANK_S + 3, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data,
-        "FANTASY ZONE II - FUWAREAK      "},
-};
+static unsigned char rhythm_mode = 0x00;
 
 static short music_selected_no;
 static short music_current_no;
@@ -120,7 +77,57 @@ static void set_enable(unsigned char data) __naked
     __asm__("ret");
 }
 
-#define OUT_BUFFER_SIZE 4
+static void InitTime()
+{
+    time_fps = 0;
+    time_min_sec.sec0 = 0;
+    time_min_sec.sec1 = 0;
+    time_min_sec.min0 = 0;
+    time_min_sec.min1 = 0;
+}
+
+inline static void PrintTime()
+{
+    SMS_setNextTileatXY(25, 17);
+    SMS_setTile(time_min_sec.min1 + DATA_ROOT + FONT_TILES_NO_S);
+    SMS_setNextTileatXY(26, 17);
+    SMS_setTile(time_min_sec.min0 + DATA_ROOT + FONT_TILES_NO_S);
+
+    SMS_setNextTileatXY(27, 17);
+    SMS_setTile(':' - 33 + FONT_TILES_NO_S);
+
+    SMS_setNextTileatXY(28, 17);
+    SMS_setTile(time_min_sec.sec1 + DATA_ROOT + FONT_TILES_NO_S);
+    SMS_setNextTileatXY(29, 17);
+    SMS_setTile(time_min_sec.sec0 + DATA_ROOT + FONT_TILES_NO_S);    
+}
+
+inline static void IncrementTime()
+{
+    time_fps++;
+    if(time_fps >= 60)
+    {
+        time_fps=0;
+        time_min_sec.sec0++;
+        if(time_min_sec.sec0 >= 10)
+        {
+            time_min_sec.sec0 = 0;
+            time_min_sec.sec1++;
+            if(time_min_sec.sec1 >= 6)
+            {
+                time_min_sec.sec1 = 0;
+                time_min_sec.min0++;
+                if(time_min_sec.min0 >= 10)
+                {
+                    time_min_sec.min0 = 0;
+                    time_min_sec.min1++;
+                    if(time_min_sec.min1 >= 10)
+                        time_min_sec.min1 = 0;
+                }
+            }
+        }
+    }
+}
 
 static heatshrink_decoder *hsd = 0;
 static uint8_t out_buf[OUT_BUFFER_SIZE*4];
@@ -195,6 +202,8 @@ static void InitDecoder()
 
 static inline void SeekDecodedData(unsigned short position)
 {
+    //PrintText("SEEK...",24,19);
+
     InitDecoder();
     if(data_current_vgmDataCompressed)
     {
@@ -214,6 +223,8 @@ static inline void SeekDecodedData(unsigned short position)
     }else{
         data_current_vgmData += position - 1;
     }
+
+    //PrintText("       ",24,19);
 }
 
 static void VGMSoundOff()
@@ -257,6 +268,7 @@ void VGMUpdate()
 
             music_command = PlayerCommand_None;
             music_current_stat = PlayerStatus_Stop;
+
             break;
         }
         case PlayerCommand_Play:
@@ -273,13 +285,18 @@ void VGMUpdate()
     }
 
     if(music_current_stat == PlayerStatus_Stop)
+    {
+        InitTime();
         return;
-
+    }
     if(data_current_pos == 0xffff)
     {
         music_current_stat = PlayerStatus_Stop;
         return;
     }
+
+    IncrementTime();
+
     if(data_waitN)
     {
         data_waitN--;
@@ -435,7 +452,6 @@ void VGMUpdate()
     }
 }
 
-
 void InitVGM()
 {
     music_selected_no = 0;
@@ -445,7 +461,11 @@ void InitVGM()
     music_current_stat = PlayerStatus_Stop;
     music_command = PlayerCommand_None;
 
-    PrintText(music_data[music_selected_no].title,0,1);
+    PrintText(music_data[music_selected_no].title,0,14);
+
+    PrintText("TIME",24,16);
+    InitTime();
+    PrintTime();
 }
 
 static void drawLevel(struct OutputData *odp, char x)
@@ -493,13 +513,13 @@ void processPlayer(char vblank)
                 music_selected_no--;
                 if(music_selected_no < 0)
                     music_selected_no = 1 + sizeof(music_data)/sizeof(music_data);
-                PrintText(music_data[music_selected_no].title,0,1);
+                PrintText(music_data[music_selected_no].title,0,14);
                 break;
             case PORT_A_KEY_RIGHT:
                 music_selected_no++;
                 if(music_selected_no > 1 + sizeof(music_data)/sizeof(music_data))
                     music_selected_no = 0;
-                PrintText(music_data[music_selected_no].title,0,1);
+                PrintText(music_data[music_selected_no].title,0,14);
                 break;
             case PORT_A_KEY_2:
                 switch (music_current_stat)
@@ -520,9 +540,14 @@ void processPlayer(char vblank)
                 }
                 break;
         }
+
+        PrintTime();
+
+        for(char i=0;i<6;i++)
+            drawLevel(output_data_opll+i,8+i);
         for(char i=0;i<4;i++)
-            drawLevel(output_data_psg+i,i<<1);
-        for(char i=0;i<12;i++)
-            drawLevel(output_data_opll+i,(4+i)<<1);
+            drawLevel(output_data_psg+i,14+i);
+        for(char i=6;i<12;i++)
+            drawLevel(output_data_opll+i,12+i);
     }
 }

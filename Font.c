@@ -110,23 +110,19 @@ void engine_font_manager_draw_data(unsigned int data, unsigned char x, unsigned 
 	}
 }
 */
-void PrintData(unsigned int data, unsigned char x, unsigned char y)
+void PrintData(unsigned int data, unsigned char x, unsigned char y, unsigned char w)
 {
-	//const unsigned int *pnt = font__tilemap__bin;
-
 	unsigned char idx;
 	signed char tileNo;
 
-	char hold[DATA_LONG];
-	for (idx = 0; idx < DATA_LONG; ++idx)
+	for (idx = 0; idx < w; idx++)
 	{
-		hold[idx] = data % UNIT_ROOT;
+		unsigned char val = data % UNIT_ROOT;
 		data /= UNIT_ROOT;
 
-		tileNo = hold[idx] + DATA_ROOT + FONT_TILES_NO_S;
+		tileNo = val + DATA_ROOT + FONT_TILES_NO_S;
 
 		SMS_setNextTileatXY(x--, y);
-		//SMS_setTile (*pnt + tile);
 		SMS_setTile(tileNo);
 	}
 }

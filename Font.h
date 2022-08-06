@@ -2,7 +2,7 @@
 
 #define FONT_TILES_NO_S		1
 #define FONT_TILES_NO_E		63
-#define DATA_ROOT	16		// "0"
+#define DATA_ROOT	15		// "0"
 #define UNIT_ROOT	10		// 10 is decimal
 #define DATA_LONG	7		// 7 placeholder
 
@@ -21,6 +21,6 @@ void PrintHexShort(unsigned short value, unsigned char x, unsigned char y, unsig
 void PrintText(unsigned char* text, unsigned char x, unsigned char y);
 void PrintChar(unsigned char ch, unsigned char x, unsigned char y);
 //void engine_font_manager_draw_data(unsigned int data, unsigned char x, unsigned char y);
-void PrintData(unsigned int data, unsigned char x, unsigned char y);
+void PrintData(unsigned int data, unsigned char x, unsigned char y, unsigned char w);
 
 extern const char hexNumToTileNo[];

@@ -20,7 +20,7 @@ void processLogo(char vblank) /*__banked*/ {
         SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
 
         SMS_loadPSGaidencompressedTiles(logo_tile_psgcompr, BG_TILES_NO_S);
-        SMS_loadTileMapArea(7, 3, logo_map_bin, 18, 12);
+        SMS_loadTileMapArea(7, 0, logo_map_bin, 18, 12);
         for (int i = 0; i < 16; i++)
           SetSpritePaletteColor(i, logo_pal_bin[i]);
 

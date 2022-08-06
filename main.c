@@ -55,10 +55,11 @@ void main() {
   currentBgPalette = defBgPalette;
   currentSpPalette = defSpPalette;
 
-
   SMS_setVBlankInterruptHandler(VinterruptHandler);
-  // SMS_setLineCounter(192 - 95);
-  // SMS_enableLineInterrupt();
+  
+  // SMS_setLineInterruptHandler(HinterruptHandler);
+  // SMS_setLineCounter(192/2);
+  //SMS_enableLineInterrupt();
 
   while (1) {
     // VBlank****************************************

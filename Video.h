@@ -58,6 +58,7 @@ extern inline void SMS_byte_to_VDP_data(unsigned char data);
 extern void (*theVBlankInterruptHandler)(void);
 extern void SetVBlankInterruptHandler (void (*theHandlerFunction)(void)) __z88dk_fastcall;
 extern void VinterruptHandler();
+extern void HinterruptHandler();
 
 extern void ClearBG();
 
