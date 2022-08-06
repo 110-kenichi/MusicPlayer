@@ -37,9 +37,8 @@ unsigned short PhaseLocalCounter4 = 0;
 Character Characters[128];
 
 void ProcessGamePhase(char vblank);
+
 void InitVGM();
-
-
 
 void main() {
   SMS_init();
@@ -53,21 +52,9 @@ void main() {
 
   //InitFont();
 
-  /*
-  //Create sin table
-  for (int i = 0; i < 32; i++)
-  {
-      sin_table[i].Word = (int)(sinf((float)i / 64.f * PI) * 256.f);
-      sin_table[63 - i] = sin_table[i];
-      sin_table[64 + i].Word = -sin_table[i].Word;
-      sin_table[127 - i].Word = -sin_table[i].Word;
-  }*/
-
   currentBgPalette = defBgPalette;
   currentSpPalette = defSpPalette;
 
-  SMS_mapCODEBank(CODE_BANK_S + 1);
-  SMS_mapROMBank(DATA_BANK_S + 1);
 
   SMS_setVBlankInterruptHandler(VinterruptHandler);
   // SMS_setLineCounter(192 - 95);
@@ -79,14 +66,13 @@ void main() {
     VDPBlank = false;
     while (!VDPBlank) waitCount++;
 
-    // PrintWait(waitCount | delayCount);
+    //PrintWait(waitCount | delayCount);
     // printHexShort(scx, 1, 1, 4);
     waitCount = 0;
     delayCount = 0;
 
     // GAME****************************************
     ProcessGamePhase(1);
-
 
     FinishVBlank();
   }

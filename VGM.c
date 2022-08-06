@@ -42,11 +42,52 @@ struct MusicData
     unsigned char *title;
 };
 
+struct OutputData
+{
+    unsigned char keyon;
+    unsigned char volume;
+    unsigned char last_volume;
+    unsigned char key;
+    unsigned char last_key;
+};
+
+struct OutputData output_data_psg[] =
+{
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0}
+};
+
+struct OutputData output_data_opll[] =
+{
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+
+
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0},
+    {0, 0x0, 0xf, 0, 0}
+};
+
+static unsigned char rhythm_mode = 0x00;
+
 struct MusicData music_data[] =
 {
-    {DATA_BANK_S + 1, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data, "FANTASY ZONE - LAST BOSS"},
-    {DATA_BANK_S + 2, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data, "OUTRUN - MAGICAL SOUND SHOWER"},
-    {DATA_BANK_S + 3, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data, "FANTASY ZONE II - FUWAREAK"},
+    {DATA_BANK_S + 1, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data,
+        "FANTASY ZONE - LAST BOSS        "},
+    {DATA_BANK_S + 2, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data,
+        "OUTRUN - MAGICAL SOUND SHOWER   "},
+    {DATA_BANK_S + 3, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data,
+        "FANTASY ZONE II - FUWAREAK      "},
 };
 
 static short music_selected_no;
@@ -182,6 +223,11 @@ static void VGMSoundOff()
     IOPortOPSG = 0b11011111;
     IOPortOPSG = 0b11111111;
 
+    for(int i=0;i<4;i++)
+        output_data_psg[i].volume = 0xf;
+    for(int i=0;i<12;i++)
+        output_data_opll[i].volume = 0xf;
+
     for(int i=0;i<9;i++)
     {
         IOPortOPLL1 = 0x30+i;
@@ -261,7 +307,28 @@ void VGMUpdate()
                     //IOPortOGG = ReadDecodedData();
                     break;
                 case 0x3a:  //PSG
-                    IOPortOPSG = ReadDecodedData();
+                    {
+                        register unsigned char wdata = ReadDecodedData();
+                        IOPortOPSG = wdata;
+                        if((wdata & 0b10010000) == 0b10010000)
+                        {
+                            switch(wdata & 0b01100000)
+                            {
+                                case 0b00000000:
+                                   output_data_psg[0].volume = (wdata & 0xf);
+                                   break;
+                                case 0b00100000:
+                                   output_data_psg[1].volume = (wdata & 0xf);
+                                   break;
+                                case 0b01000000:
+                                   output_data_psg[2].volume = (wdata & 0xf);
+                                   break;
+                                case 0b01100000:
+                                   output_data_psg[3].volume = (wdata & 0xf);
+                                   break;
+                            }
+                        }
+                    }
                     break;
                 case 0x80:  //WAIT
                 case 0x81:
@@ -287,7 +354,81 @@ void VGMUpdate()
                     return;
                 default:
                     IOPortOPLL1 = cmd;
-                    IOPortOPLL2 = ReadDecodedData();
+                    {
+                        register unsigned char wdata = ReadDecodedData();
+                        IOPortOPLL2 = wdata;
+                        switch(cmd)
+                        {
+                            case 0xe:
+                                rhythm_mode = wdata & 0b100000;
+                                if(wdata & 0x1)
+                                    output_data_opll[8].volume = (wdata & 0xf);
+                                if(wdata & 0x2)
+                                    output_data_opll[9].volume = (wdata & 0xf);
+                                if(wdata & 0x4)
+                                    output_data_opll[10].volume = (wdata & 0xf);
+                                if(wdata & 0x8)
+                                    output_data_opll[11].volume = (wdata & 0xf);
+                                if(wdata & 0x16)
+                                    output_data_opll[12].volume = (wdata & 0xf);
+                                break;
+                                //key on
+                            case 0x20:
+                            case 0x21:
+                            case 0x22:
+                            case 0x23:
+                            case 0x24:
+                            case 0x25:
+                            case 0x26:
+                            case 0x27:
+                            case 0x28:
+                                if(wdata & 0b00010000)
+                                    output_data_opll[cmd-0x20].volume =  output_data_opll[cmd-0x20].keyon;
+                                break;
+                                //volume
+                            case 0x30:
+                            case 0x31:
+                            case 0x32:
+                            case 0x33:
+                            case 0x34:
+                            case 0x35:
+                                if(wdata & 0b00010000)
+                                    output_data_opll[cmd-0x30].keyon = (wdata & 0xf);
+                                break;
+                            case 0x36:
+                                //BD
+                                if(!rhythm_mode)
+                                {
+                                    if(wdata & 0b00010000)
+                                        output_data_opll[6].keyon = (wdata & 0xf);
+                                }else{
+                                    output_data_opll[8].keyon = (wdata & 0xf);
+                                }
+                                break;
+                            case 0x37:
+                                //SD,HH
+                                if(!rhythm_mode)
+                                {
+                                    if(wdata & 0b00010000)
+                                        output_data_opll[7].keyon = (wdata & 0xf);
+                                }else{
+                                    output_data_opll[9].keyon = (wdata & 0xf);
+                                    output_data_opll[10].keyon = wdata >> 4;
+                                }
+                                break;
+                            case 0x38:
+                                //TCYM,TOM
+                                if(!rhythm_mode)
+                                {
+                                    if(wdata & 0b00010000)
+                                        output_data_opll[8].keyon = (wdata & 0xf);
+                                }else{
+                                    output_data_opll[11].keyon = (wdata & 0xf);
+                                    output_data_opll[12].keyon = wdata >> 4;
+                                }
+                                break;
+                        }
+                    }
                     break;
             }
         }
@@ -304,7 +445,42 @@ void InitVGM()
     music_current_stat = PlayerStatus_Stop;
     music_command = PlayerCommand_None;
 
-    PrintText(music_data[music_selected_no].title,0,0);
+    PrintText(music_data[music_selected_no].title,0,1);
+}
+
+static void drawLevel(struct OutputData *odp, char x)
+{
+    unsigned char tv = odp->volume;
+    register unsigned char vol = (0xf - tv) >> 1;
+    register unsigned char lvol = (0xf - odp->last_volume) >> 1;
+    if(vol > lvol)
+    {
+        for(int y = lvol;y<=vol;y++)
+        {
+            const signed char tileNo = FONT_TILES_NO_E + 1;
+            switch(y)
+            {
+                case 7:
+                    SetTileatXY(x, 23-y, tileNo+2);
+                    break;
+                case 6:
+                case 5:
+                case 4:
+                    SetTileatXY(x, 23-y, tileNo+1);
+                    break;
+                default:
+                    SetTileatXY(x, 23-y, tileNo);
+                    break;
+            }
+        }
+    }else
+    {
+        for(int y = lvol;y>=vol;y--)
+            SetTileatXY(x, 23-y, 0);
+    }
+    odp->last_volume = tv;
+    if(tv < 0xf)
+        odp->volume = tv+1;
 }
 
 void processPlayer(char vblank)
@@ -317,13 +493,13 @@ void processPlayer(char vblank)
                 music_selected_no--;
                 if(music_selected_no < 0)
                     music_selected_no = 1 + sizeof(music_data)/sizeof(music_data);
-                PrintText(music_data[music_selected_no].title,0,0);
+                PrintText(music_data[music_selected_no].title,0,1);
                 break;
             case PORT_A_KEY_RIGHT:
                 music_selected_no++;
                 if(music_selected_no > 1 + sizeof(music_data)/sizeof(music_data))
                     music_selected_no = 0;
-                PrintText(music_data[music_selected_no].title,0,0);
+                PrintText(music_data[music_selected_no].title,0,1);
                 break;
             case PORT_A_KEY_2:
                 switch (music_current_stat)
@@ -344,5 +520,9 @@ void processPlayer(char vblank)
                 }
                 break;
         }
+        for(char i=0;i<4;i++)
+            drawLevel(output_data_psg+i,i<<1);
+        for(char i=0;i<12;i++)
+            drawLevel(output_data_opll+i,(4+i)<<1);
     }
 }

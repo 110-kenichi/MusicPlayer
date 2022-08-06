@@ -1,12 +1,12 @@
 #include "SMSlib/SMSlib.h"
 #include "Font.h"
-#include "Video.h"
-#include "Font_tile.h"
+#include "main.h"
 
 void InitFont()
 {
-	SMS_loadBGPalette(font_pal_bin);
 	SMS_loadTiles(font_tile_bin, 0, font_tile_bin_size);
+	for (int i = 0; i < 16; i++)
+		SetBGPaletteColor(i, font_pal_bin[i]);
 }
 
 const char hexNumToTileNo[] = {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 + 7, 27 + 7, 28 + 7, 29 + 7, 30 + 7, 31 + 7};

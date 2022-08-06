@@ -1,18 +1,13 @@
-extern const unsigned char	font_map_bin[];
-#define				font_map_bin_size 128
-
-extern const unsigned char	font_pal_bin[];
-#define				font_pal_bin_size 16
-
-extern const unsigned char	font_tile_bin[];
-#define				font_tile_bin_size 2048
-
+#include "Font_tile.h"
 
 #define FONT_TILES_NO_S		1
+#define FONT_TILES_NO_E		63
 #define DATA_ROOT	16		// "0"
 #define UNIT_ROOT	10		// 10 is decimal
 #define DATA_LONG	7		// 7 placeholder
-#define BG_TILES_NO_S		65
+
+#define BG_TILES_NO_S		(64+16)
+
 #define SP_TILES_NO_S		256
 
 void InitFont();

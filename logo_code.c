@@ -19,9 +19,10 @@ void processLogo(char vblank) /*__banked*/ {
         SMS_VDPturnOffFeature(VDPFEATURE_SHIFTSPRITES);
         SMS_VDPturnOffFeature(VDPFEATURE_HIDEFIRSTCOL);
 
-        SMS_loadPSGaidencompressedTiles(logo_bg_tile_psgcompr, BG_TILES_NO_S);
-        SMS_loadTileMapArea(0, 4, logo_bg_map_bin, 32, 16);
-        for (int i = 0; i < 16; i++) SetBGPaletteColor(i, logo_bg_pal_bin[i]);
+        SMS_loadPSGaidencompressedTiles(logo_tile_psgcompr, BG_TILES_NO_S);
+        SMS_loadTileMapArea(7, 3, logo_map_bin, 18, 12);
+        for (int i = 0; i < 16; i++)
+          SetSpritePaletteColor(i, logo_pal_bin[i]);
 
         PhaseCounter++;
         PhaseLocalCounter = 0;
@@ -31,8 +32,7 @@ void processLogo(char vblank) /*__banked*/ {
         break;
       }
       case 1: {
-        FadeInPalette(PhaseLocalCounter, logo_bg_pal_bin,
-        logo_bg_pal_bin_size, 0);
+        //FadeInPalette(PhaseLocalCounter, logo_pal_bin, logo_pal_bin_size, 0);
         PhaseLocalCounter++;
         if (PhaseLocalCounter == 7) {
           PhaseCounter++;
