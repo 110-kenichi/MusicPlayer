@@ -31,6 +31,19 @@ enum PlayerStatus
     PlayerStatus_Play = 1,
 };
 
+enum PlayerNotify
+{
+    PlayerNotify_None = 0,
+    PlayerNotify_Next = 1,
+};
+
+enum LoopMode
+{
+    LoopMode_All = 0,
+    LoopMode_One = 1,
+    LoopMode_None = 2,
+};
+
 struct MusicData
 {
     unsigned char bank_no;

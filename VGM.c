@@ -41,6 +41,8 @@ struct OutputData output_data_opll[] =
     {0, 0x0, 0xf, 0, 0},
 };
 
+static unsigned char loop_mode = LoopMode_All;
+
 static unsigned char time_fps = 00;
 static struct ElapseData time_min_sec;
 
@@ -49,9 +51,9 @@ static unsigned char rhythm_mode = 0x00;
 static short music_selected_no;
 static short music_current_no;
 
-static unsigned char music_last_stat = 0xff;
 static unsigned char music_current_stat = 0;
 static unsigned char music_command = PlayerCommand_None;
+static unsigned char music_notify = 0;
 
 static const unsigned char *data_current_vgmData;
 static unsigned short data_current_vgmDataSize;
@@ -201,9 +203,8 @@ static void InitDecoder()
 
 static inline void SeekDecodedData(unsigned short position)
 {
-    //PrintText("SEEK...",24,19);
-
     InitDecoder();
+#if 0
     if(data_current_vgmDataCompressed)
     {
         while(total_read < position - 1 - (OUT_BUFFER_SIZE*4))
@@ -222,8 +223,7 @@ static inline void SeekDecodedData(unsigned short position)
     }else{
         data_current_vgmData += position - 1;
     }
-
-    //PrintText("       ",24,19);
+#endif
 }
 
 static void VGMSoundOff()
@@ -252,6 +252,111 @@ static void VGMSoundOff()
     IOPortOPLL2 = 0xff;
 }
 
+inline static void WritePsgData()
+{
+    register unsigned char wdata = ReadDecodedData();
+    IOPortOPSG = wdata;
+    if((wdata & 0b10010000) == 0b10010000)
+    {
+        switch(wdata & 0b01100000)
+        {
+            case 0b00000000:
+                output_data_psg[0].volume = (wdata & 0xf);
+                break;
+            case 0b00100000:
+                output_data_psg[1].volume = (wdata & 0xf);
+                break;
+            case 0b01000000:
+                output_data_psg[2].volume = (wdata & 0xf);
+                break;
+            case 0b01100000:
+                output_data_psg[3].volume = (wdata & 0xf);
+                break;
+        }
+    }    
+}
+
+inline static void WriteOpllData(unsigned char cmd)
+{
+    IOPortOPLL1 = cmd;
+    {
+        register unsigned char wdata = ReadDecodedData();
+        IOPortOPLL2 = wdata;
+
+        switch(cmd)
+        {
+            case 0xe:
+                rhythm_mode = wdata & 0b100000;
+                if(wdata & 0x16)    //BD
+                    output_data_opll[7].volume = output_data_opll[7].keyon;
+                if(wdata & 0x8)     //SD
+                    output_data_opll[8].volume = output_data_opll[8].keyon;
+                if(wdata & 0x1)     //HH
+                    output_data_opll[9].volume = output_data_opll[9].keyon;
+                if(wdata & 0x2)     //TCYM
+                    output_data_opll[10].volume = output_data_opll[10].keyon;
+                if(wdata & 0x4)     //TOM
+                    output_data_opll[11].volume = output_data_opll[11].keyon;
+                break;
+                //key on
+            case 0x20:
+            case 0x21:
+            case 0x22:
+            case 0x23:
+            case 0x24:
+            case 0x25:
+            case 0x26:
+            case 0x27:
+            case 0x28:
+                if(wdata & 0b00010000)
+                    output_data_opll[cmd-0x20].volume =  output_data_opll[cmd-0x20].keyon;
+                break;
+                //volume
+            case 0x30:
+            case 0x31:
+            case 0x32:
+            case 0x33:
+            case 0x34:
+            case 0x35:
+                if(wdata & 0b00010000)
+                    output_data_opll[cmd-0x30].keyon = (wdata & 0xf);
+                break;
+            case 0x36:
+                //BD
+                if(rhythm_mode)
+                {
+                    output_data_opll[7].keyon = (wdata & 0xf);
+                }else{
+                    if(wdata & 0b00010000)
+                        output_data_opll[6].keyon = (wdata & 0xf);
+                }
+                break;
+            case 0x37:
+                //SD,HH
+                if(rhythm_mode)
+                {
+                    output_data_opll[8].keyon = (wdata & 0xf);
+                    output_data_opll[9].keyon = wdata >> 4;
+                }else{
+                    if(wdata & 0b00010000)
+                        output_data_opll[7].keyon = (wdata & 0xf);
+                }
+                break;
+            case 0x38:
+                //TCYM,TOM
+                if(rhythm_mode)
+                {
+                    output_data_opll[10].keyon = (wdata & 0xf);
+                    output_data_opll[11].keyon = wdata >> 4;
+                }else{
+                    if(wdata & 0b00010000)
+                        output_data_opll[8].keyon = (wdata & 0xf);
+                }
+                break;
+        }
+    }    
+}
+
 void VGMUpdate()
 {
     switch(music_command)
@@ -264,16 +369,17 @@ void VGMUpdate()
                 IOPortOPLL1 = 0x20+i;
                 IOPortOPLL2 = 0x0;
             }
+            InitTime();
 
             music_command = PlayerCommand_None;
             music_current_stat = PlayerStatus_Stop;
-
             break;
         }
         case PlayerCommand_Play:
         {
             VGMSoundOff();
             InitDecoder();
+            InitTime();
 
             music_command = PlayerCommand_None;
             music_current_stat = PlayerStatus_Play;
@@ -284,15 +390,9 @@ void VGMUpdate()
     }
 
     if(music_current_stat == PlayerStatus_Stop)
-    {
-        InitTime();
         return;
-    }
     if(data_current_pos == 0xffff)
-    {
-        music_current_stat = PlayerStatus_Stop;
         return;
-    }
 
     IncrementTime();
 
@@ -303,7 +403,7 @@ void VGMUpdate()
     }
 
     while(1){
-        unsigned char cmd = PeekDecodedData();
+        register unsigned char cmd = PeekDecodedData();
         if(cmd != 0xff)
         {
             if(data_waitOne)
@@ -323,28 +423,7 @@ void VGMUpdate()
                     //IOPortOGG = ReadDecodedData();
                     break;
                 case 0x3a:  //PSG
-                    {
-                        register unsigned char wdata = ReadDecodedData();
-                        IOPortOPSG = wdata;
-                        if((wdata & 0b10010000) == 0b10010000)
-                        {
-                            switch(wdata & 0b01100000)
-                            {
-                                case 0b00000000:
-                                   output_data_psg[0].volume = (wdata & 0xf);
-                                   break;
-                                case 0b00100000:
-                                   output_data_psg[1].volume = (wdata & 0xf);
-                                   break;
-                                case 0b01000000:
-                                   output_data_psg[2].volume = (wdata & 0xf);
-                                   break;
-                                case 0b01100000:
-                                   output_data_psg[3].volume = (wdata & 0xf);
-                                   break;
-                            }
-                        }
-                    }
+                    WritePsgData();
                     break;
                 case 0x80:  //WAIT
                 case 0x81:
@@ -360,94 +439,67 @@ void VGMUpdate()
                     data_waitN = ReadDecodedData();
                     return;
                 case 0x8e:  //loop
-                    data_current_pos = ReadDecodedData();
-                    data_current_pos += ((unsigned short)ReadDecodedData()) << 8;
-                    SeekDecodedData(data_current_pos);
+                    switch(loop_mode)
+                    {
+                        case LoopMode_One:
+                            data_current_pos = ReadDecodedData();
+                            data_current_pos += ((unsigned short)ReadDecodedData()) << 8;
+                            SeekDecodedData(data_current_pos);
+                            break;
+                        case LoopMode_All:
+                            music_notify = PlayerNotify_Next;
+                            break;
+                        case LoopMode_None:
+                            data_current_pos = 0xffff;
+                            music_current_stat = PlayerStatus_Stop;
+                            return;
+                    }
                     return;
                 case 0x8f:  //end
                     data_current_pos = 0xffff;
-                    music_current_stat = 0;
+                    music_current_stat = PlayerStatus_Stop;
+                    music_notify = PlayerNotify_Next;
                     return;
                 default:
-                    IOPortOPLL1 = cmd;
-                    {
-                        register unsigned char wdata = ReadDecodedData();
-                        IOPortOPLL2 = wdata;
-                        switch(cmd)
-                        {
-                            case 0xe:
-                                rhythm_mode = wdata & 0b100000;
-                                if(wdata & 0x16)    //BD
-                                    output_data_opll[7].volume = output_data_opll[7].keyon;
-                                if(wdata & 0x8)     //SD
-                                    output_data_opll[8].volume = output_data_opll[8].keyon;
-                                if(wdata & 0x1)     //HH
-                                    output_data_opll[9].volume = output_data_opll[9].keyon;
-                                if(wdata & 0x2)     //TCYM
-                                    output_data_opll[10].volume = output_data_opll[10].keyon;
-                                if(wdata & 0x4)     //TOM
-                                    output_data_opll[11].volume = output_data_opll[11].keyon;
-                                break;
-                                //key on
-                            case 0x20:
-                            case 0x21:
-                            case 0x22:
-                            case 0x23:
-                            case 0x24:
-                            case 0x25:
-                            case 0x26:
-                            case 0x27:
-                            case 0x28:
-                                if(wdata & 0b00010000)
-                                    output_data_opll[cmd-0x20].volume =  output_data_opll[cmd-0x20].keyon;
-                                break;
-                                //volume
-                            case 0x30:
-                            case 0x31:
-                            case 0x32:
-                            case 0x33:
-                            case 0x34:
-                            case 0x35:
-                                if(wdata & 0b00010000)
-                                    output_data_opll[cmd-0x30].keyon = (wdata & 0xf);
-                                break;
-                            case 0x36:
-                                //BD
-                                if(rhythm_mode)
-                                {
-                                    output_data_opll[7].keyon = (wdata & 0xf);
-                                }else{
-                                    if(wdata & 0b00010000)
-                                        output_data_opll[6].keyon = (wdata & 0xf);
-                                }
-                                break;
-                            case 0x37:
-                                //SD,HH
-                                if(rhythm_mode)
-                                {
-                                    output_data_opll[8].keyon = (wdata & 0xf);
-                                    output_data_opll[9].keyon = wdata >> 4;
-                                }else{
-                                    if(wdata & 0b00010000)
-                                        output_data_opll[7].keyon = (wdata & 0xf);
-                                }
-                                break;
-                            case 0x38:
-                                //TCYM,TOM
-                                if(rhythm_mode)
-                                {
-                                    output_data_opll[10].keyon = (wdata & 0xf);
-                                    output_data_opll[11].keyon = wdata >> 4;
-                                }else{
-                                    if(wdata & 0b00010000)
-                                        output_data_opll[8].keyon = (wdata & 0xf);
-                                }
-                                break;
-                        }
-                    }
+                    WriteOpllData(cmd);
                     break;
             }
         }
+    }
+}
+
+void PrintLoopMode()
+{
+    switch(loop_mode)
+    {
+        case LoopMode_All:
+            PrintText("LOOP AL",25,22);
+            break;
+        case LoopMode_One:
+            PrintText("LOOP 1 ",25,22);
+            break;
+        case LoopMode_None:
+            PrintText("LOOP NO",25,22);
+            break;
+    }
+}
+
+static unsigned char music_last_stat = 0xff;
+
+inline static void PrintCurrentStat()
+{
+    if(music_last_stat != music_current_stat)
+    {
+        switch(music_current_stat)
+        {
+            case PlayerStatus_Stop:
+                PrintText("PLAY",25,19);
+                break;
+            case PlayerStatus_Play:
+                PrintText("STOP",25,19);
+                break;
+        }
+        music_last_stat = music_current_stat;
     }
 }
 
@@ -456,7 +508,7 @@ void InitVGM()
     music_selected_no = 0;
     music_current_no = 0;
 
-    music_last_stat = PlayerStatus_Stop;
+    music_last_stat = 0xff;
     music_current_stat = PlayerStatus_Stop;
     music_command = PlayerCommand_None;
 
@@ -466,9 +518,21 @@ void InitVGM()
     for(int i=0;i<8;i++)
         PrintText("d                d",7,16+i);
 
+    // PrintChar('f',3,16);
+    // PrintChar('g',3,18);
+
     PrintText("TIME",25,16);
     InitTime();
     PrintTime();
+
+    PrintText("PLAY",25,19);
+    PrintText(" 1 BTN",25,20);
+
+    PrintLoopMode();
+    PrintText(" 2 BTN",25,23);
+
+    // PrintLoopMode();
+
 }
 
 static void drawLevel(struct OutputData *odp, char x)
@@ -510,7 +574,18 @@ void processPlayer(char vblank)
 {
     if(vblank)
     {
-        switch(SMS_getKeysPressed())
+        unsigned int key = SMS_getKeysPressed();
+        if(music_notify == PlayerNotify_Next)
+        {
+            music_notify = PlayerNotify_None;
+            music_selected_no++;
+            if(music_selected_no > 1 + sizeof(music_data)/sizeof(music_data))
+                music_selected_no = 0;
+            PrintText(music_data[music_selected_no].title,0,14);
+            music_current_no = music_selected_no;
+            music_command = PlayerCommand_Play;
+        }
+        switch(key)
         {
             case PORT_A_KEY_LEFT:
                 music_selected_no--;
@@ -524,7 +599,7 @@ void processPlayer(char vblank)
                     music_selected_no = 0;
                 PrintText(music_data[music_selected_no].title,0,14);
                 break;
-            case PORT_A_KEY_2:
+            case PORT_A_KEY_1:
                 switch (music_current_stat)
                 {
                     case PlayerStatus_Stop:
@@ -542,9 +617,25 @@ void processPlayer(char vblank)
                         break;
                 }
                 break;
+            case PORT_A_KEY_2:
+                switch(loop_mode)
+                {
+                    case LoopMode_All:
+                        loop_mode = LoopMode_One;
+                        break;
+                    case LoopMode_One:
+                        loop_mode = LoopMode_None;
+                        break;
+                    case LoopMode_None:
+                        loop_mode = LoopMode_All;
+                        break;
+                }
+                PrintLoopMode();
+                break;
         }
 
         PrintTime();
+        PrintCurrentStat();
 
         for(char i=0;i<6;i++)
             drawLevel(output_data_opll+i,8+i);
