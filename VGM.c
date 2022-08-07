@@ -7,12 +7,14 @@
 
 struct MusicData music_data[] =
 {
-    {DATA_BANK_S + 1, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data,
-        "1.FANTASY ZONE - LAST BOSS      "},
-    {DATA_BANK_S + 2, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data,
-        "2.OUTRUN - MAGICAL SOUND SHOWER "},
-    {DATA_BANK_S + 3, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data,
-        "3.FANTASY ZONE II - FUWAREAK    "},
+    {DATA_BANK_S + 1, 0, 3, 0, &uncle_op_0_Size, uncle_op_0_Data,
+        "1.UNCLE FROM ANOTHER WORLD - OP "},
+    {DATA_BANK_S + 5, 0, 0x27, 0, &Fantasy_Zone___12___Last_Boss_Size, Fantasy_Zone___12___Last_Boss_Data,
+        "2.FANTASY ZONE - LAST BOSS      "},
+    {DATA_BANK_S + 6, 0, 0, 1, &Out_Run__FM____01___Magical_Sound_Shower_Size, Out_Run__FM____01___Magical_Sound_Shower_Data,
+        "3.OUTRUN - MAGICAL SOUND SHOWER "},
+    {DATA_BANK_S + 7, 0, 0, 1, &Fantasy_Zone_II__FM____Fuwareak_Size, Fantasy_Zone_II__FM____Fuwareak_Data,
+        "4.FANTASY ZONE II - FUWAREAK    "},
 };
 
 struct OutputData output_data_psg[] =
@@ -55,13 +57,13 @@ static unsigned char music_current_stat = 0;
 static unsigned char music_command = PlayerCommand_None;
 static unsigned char music_notify = 0;
 
-static const unsigned char *data_current_vgmData;
+static const unsigned char *data_current_vgmData_ptr;
+static unsigned char data_current_bankno;
 static unsigned short data_current_vgmDataSize;
+static unsigned short data_current_position;
 static unsigned char data_current_vgmDataCompressed;
 
-static unsigned short data_current_pos;
-static unsigned short data_loop_ofs;
-static unsigned short data_begin_ofs;
+static unsigned short data_current;
 static unsigned char data_waitN;
 static unsigned char data_waitOne;
 
@@ -143,8 +145,8 @@ static inline void UpdateDecodedData()
         if(out_buf_ptr == out_buf + poll_sz)
         {
             size_t sink_sz = 0;
-            heatshrink_decoder_sink(hsd, data_current_vgmData, data_current_vgmDataSize, &sink_sz);
-            data_current_vgmData += sink_sz;
+            heatshrink_decoder_sink(hsd, data_current_vgmData_ptr, data_current_vgmDataSize, &sink_sz);
+            data_current_vgmData_ptr += sink_sz;
             data_current_vgmDataSize -= sink_sz;
 
             heatshrink_decoder_poll(hsd, out_buf, OUT_BUFFER_SIZE, &poll_sz);
@@ -161,7 +163,15 @@ static unsigned char ReadDecodedData()
         total_read++;
         return *out_buf_ptr++;
     }else{
-        return *data_current_vgmData++;
+        if(data_current_position == SPLIT_SIZE)
+        {
+            data_current_bankno++;
+            SMS_mapROMBank(data_current_bankno);
+            data_current_vgmData_ptr = music_data[music_current_no].data;
+            data_current_position = 0;
+        }
+        data_current_position++;
+        return *data_current_vgmData_ptr++;
     }
 }
 
@@ -172,22 +182,23 @@ static inline unsigned char PeekDecodedData()
         UpdateDecodedData();
         return *out_buf_ptr;
     }else{
-        return *data_current_vgmData;
+        return *data_current_vgmData_ptr;
     }
 }
 
 static void InitDecoder()
 {
-    data_current_pos = 0x0;
-    data_loop_ofs = 0x0;
+    data_current = 0x0;
     data_waitN = 0;
     data_waitOne = 0;
 
-    SMS_mapROMBank(music_data[music_current_no].bank_no);
+    data_current_bankno = music_data[music_current_no].bank_no;
+    SMS_mapROMBank(data_current_bankno);
 
     data_current_vgmDataCompressed = music_data[music_current_no].compressed;
-    data_current_vgmData = music_data[music_current_no].data;
+    data_current_vgmData_ptr = music_data[music_current_no].data;
     data_current_vgmDataSize = *music_data[music_current_no].size;
+    data_current_position = 0;
 
     if(hsd == 0)
         hsd = heatshrink_decoder_alloc(512, 11, 4);
@@ -201,17 +212,17 @@ static void InitDecoder()
     set_enable(ReadDecodedData());
 }
 
-static inline void SeekDecodedData(unsigned short position)
+static inline void SeekToLoop(unsigned short position)
 {
     InitDecoder();
-#if 0
     if(data_current_vgmDataCompressed)
     {
+#if 0
         while(total_read < position - 1 - (OUT_BUFFER_SIZE*4))
         {
             size_t sink_sz = 0;
-            heatshrink_decoder_sink(hsd, data_current_vgmData, data_current_vgmDataSize, &sink_sz);
-            data_current_vgmData += sink_sz;
+            heatshrink_decoder_sink(hsd, data_current_vgmData_ptr, data_current_vgmDataSize, &sink_sz);
+            data_current_vgmData_ptr += sink_sz;
             data_current_vgmDataSize -= sink_sz;
 
             heatshrink_decoder_poll(hsd, out_buf, (OUT_BUFFER_SIZE*4), &poll_sz);
@@ -220,10 +231,14 @@ static inline void SeekDecodedData(unsigned short position)
         }
         while(total_read < position - 1)
             ReadDecodedData();
-    }else{
-        data_current_vgmData += position - 1;
-    }
 #endif
+    }else{
+        data_current_bankno = music_data[music_current_no].bank_no + music_data[music_current_no].loop_bank_no;
+        SMS_mapROMBank(data_current_bankno);
+        data_current_position = music_data[music_current_no].loop_bank_ofset;
+        data_current_vgmData_ptr = music_data[music_current_no].data;
+        data_current_vgmData_ptr += data_current_position - 1;
+    }
 }
 
 static void VGMSoundOff()
@@ -391,7 +406,7 @@ void VGMUpdate()
 
     if(music_current_stat == PlayerStatus_Stop)
         return;
-    if(data_current_pos == 0xffff)
+    if(data_current == 0xffff)
         return;
 
     IncrementTime();
@@ -439,27 +454,28 @@ void VGMUpdate()
                     data_waitN = ReadDecodedData();
                     return;
                 case 0x8e:  //loop
+                case 0x8f:  //end
                     switch(loop_mode)
                     {
                         case LoopMode_One:
-                            data_current_pos = ReadDecodedData();
-                            data_current_pos += ((unsigned short)ReadDecodedData()) << 8;
-                            SeekDecodedData(data_current_pos);
+                            data_current = ReadDecodedData();
+                            data_current += ((unsigned short)ReadDecodedData()) << 8;
+                            SeekToLoop(data_current);
                             break;
                         case LoopMode_All:
                             music_notify = PlayerNotify_Next;
                             break;
                         case LoopMode_None:
-                            data_current_pos = 0xffff;
+                            data_current = 0xffff;
                             music_current_stat = PlayerStatus_Stop;
                             return;
                     }
                     return;
-                case 0x8f:  //end
-                    data_current_pos = 0xffff;
-                    music_current_stat = PlayerStatus_Stop;
-                    music_notify = PlayerNotify_Next;
-                    return;
+                // case 0x8f:  //end
+                //     data_current_pos = 0xffff;
+                //     music_current_stat = PlayerStatus_Stop;
+                //     music_notify = PlayerNotify_Next;
+                //     return;
                 default:
                     WriteOpllData(cmd);
                     break;

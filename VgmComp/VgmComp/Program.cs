@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+const int SPLIT_SIZE = 16384 - 512;
+
 void writeWait(List<byte> outputData, int wait)
 {
     if (wait != 0)
@@ -78,35 +80,62 @@ for (int i = 0; i < args.Length; i++)
         continue;
     }
 
-    convertVgmFile(convVgmData, rawVgmData);
+    var loop_ofst = convertVgmFile(convVgmData, rawVgmData);
     //File.WriteAllBytes(vgmfile + ".dat", convVgmData.ToArray());
 
     //Compress
-    byte[] comp;
+    byte[] comp = convVgmData.ToArray();
     bool compressed = false;
-    if (convVgmData.Count > 0xff00)
+#if COMPRESS
+    if (comp.Length > 16384-512)
     {
         compressed = true;
         compressVgmFile(convVgmData, out comp);
     }
-    else
-        comp = convVgmData.ToArray();
-
+#endif
     //Output
-    writeCompressedVgmFile(vgmfile, comp, compressed);
+    int idx = 0;
+    foreach (var sarray in Split(comp, SPLIT_SIZE))
+    {
+        writeCompressedVgmFile(vgmfile, idx, sarray.ToArray(), compressed, loop_ofst);
+        idx++;
+    }
 }
 
-static void writeCompressedVgmFile(string vgmfile, byte[] comp, bool compressed)
+static IEnumerable<IEnumerable<T>> Split<T>(T[] arr, int size)
+{
+    return arr.Select((s, i) => arr.Skip(i * size).Take(size)).Where(a => a.Any());
+}
+
+static void writeCompressedVgmFile(string vgmfile, int idx, byte[] comp, bool compressed, int loop_ofst)
 {
     StringBuilder sb = new StringBuilder();
-    string mname = Path.GetFileNameWithoutExtension(vgmfile);
+    string mname = Path.GetFileNameWithoutExtension(vgmfile) + "_" + idx.ToString();
     mname = Regex.Replace(mname, @"[\s()[\]\-+]", "_", RegexOptions.Compiled);
 
-    sb.AppendLine("extern const unsigned char " + mname + "_Compressed;");
+    if (idx == 0)
+    {
+        if (idx * SPLIT_SIZE <= loop_ofst && loop_ofst < (idx + 1) * SPLIT_SIZE)
+        {
+            sb.AppendLine("//extern const unsigned char " + mname + "_LoopBankNo;");
+            sb.AppendLine("//extern const unsigned short " + mname + "_LoopBanOffset;");
+        }
+    }
+    sb.AppendLine("//extern const unsigned char " + mname + "_Compressed;");
     sb.AppendLine("extern const unsigned short " + mname + "_Size;");
     sb.AppendLine("extern const unsigned char " + mname + "_Data[];");
+
     sb.AppendLine();
-    sb.AppendLine("const unsigned char " + mname + "_Compressed = " + (compressed ? 1 : 0) + ";");
+
+    if (idx == 0)
+    {
+        if (idx * SPLIT_SIZE <= loop_ofst && loop_ofst < (idx + 1) * SPLIT_SIZE)
+        {
+            sb.AppendLine("//const unsigned char " + mname + "_LoopBankNo =" + idx + ";");
+            sb.AppendLine("//const unsigned short " + mname + "_LoopBankOffset =" + (loop_ofst % SPLIT_SIZE) + ";");
+        }
+    }
+    sb.AppendLine("//const unsigned char " + mname + "_Compressed = " + (compressed ? 1 : 0) + ";");
     sb.AppendLine("const unsigned short " + mname + "_Size = " + comp.Length.ToString() + ";");
     sb.AppendLine("const unsigned char " + mname + "_Data[] = {");
     for (var i = 0; i < comp.Length; i += 16)
@@ -117,7 +146,7 @@ static void writeCompressedVgmFile(string vgmfile, byte[] comp, bool compressed)
         sb.AppendLine();
     }
     sb.AppendLine("};");
-    File.WriteAllText(vgmfile + ".h", sb.ToString());
+    File.WriteAllText(Path.Combine(Path.GetDirectoryName(vgmfile),mname + ".h"), sb.ToString());
 }
 
 static void compressVgmFile(List<byte> cnvVgmData, out byte[] comp)
@@ -149,7 +178,7 @@ static void compressVgmFile(List<byte> cnvVgmData, out byte[] comp)
     comp = vs.ToArray();
 }
 
-void convertVgmFile(List<byte> cnvVgmData, byte[] rawVgmData)
+int convertVgmFile(List<byte> cnvVgmData, byte[] rawVgmData)
 {
     //Convert
     int current_pos;
@@ -206,7 +235,7 @@ void convertVgmFile(List<byte> cnvVgmData, byte[] rawVgmData)
     else if (rawVgmData[3] == 0 && rawVgmData[4] != 0)
         cnvVgmData.Add(0x1);
 
-    int newLoop = 0;
+    int newLoop = -1;
     int waitN = 0;
     while (true)
     {
@@ -265,4 +294,5 @@ void convertVgmFile(List<byte> cnvVgmData, byte[] rawVgmData)
         if (cmd == 0xff)
             break;
     }
+    return newLoop;
 }

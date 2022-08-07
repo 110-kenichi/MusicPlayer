@@ -8,6 +8,11 @@ __sfr __at 0xF1 IOPortOPLL2;
 
 #define OUT_BUFFER_SIZE 4
 
+#define SPLIT_SIZE (16384 - 512)
+
+extern const unsigned short uncle_op_0_Size;
+extern const unsigned char uncle_op_0_Data[];
+
 extern const unsigned short Fantasy_Zone___12___Last_Boss_Size;
 extern const unsigned char Fantasy_Zone___12___Last_Boss_Data[];
 
@@ -47,6 +52,8 @@ enum LoopMode
 struct MusicData
 {
     unsigned char bank_no;
+    unsigned char loop_bank_no;
+    unsigned char loop_bank_ofset;
     unsigned char compressed;
     unsigned short *size;
     unsigned char *data;

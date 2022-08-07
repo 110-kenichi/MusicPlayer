@@ -4,7 +4,7 @@ PROGRAM = MuPlayer.sms
 CC = sdcc.exe
 CFLAGS = -c -mz80 --std-c2x --opt-code-speed --debug 
 #OBJS =  main.rel Types.rel font.rel sound.rel video.rel font.rel font_tile.rel PSGLib.rel logo_code.rel logo_tile.rel title_code.rel title_tile.rel sel_code.rel sel_tile.rel 
-OBJS =  main.rel Types.rel font.rel video.rel font.rel font_tile.rel logo_code.rel logo_tile.rel heatshrink_decoder.rel VGM.rel Data1.rel Data2.rel Data3.rel 
+OBJS =  main.rel Types.rel font.rel video.rel font.rel font_tile.rel logo_code.rel logo_tile.rel heatshrink_decoder.rel VGM.rel Data0_0.rel Data0_1.rel Data0_2.rel Data0_3.rel Data1.rel Data2.rel Data3.rel 
 
 .SUFFIXES: .c .rel .asm
 
@@ -20,6 +20,10 @@ $(PROGRAM): crt0b_sms.rel $(OBJS)
 	 -Wl-b_BANK_MD1=0x48000\
 	 -Wl-b_BANK_MD2=0x58000\
 	 -Wl-b_BANK_MD3=0x68000\
+	 -Wl-b_BANK_MD4=0x78000\
+	 -Wl-b_BANK_MD5=0x88000\
+	 -Wl-b_BANK_MD6=0x98000\
+	 -Wl-b_BANK_MD7=0xA8000\
 	 $^
 	makesms.exe MuPlayer.ihx MuPlayer.sms
 	cmd.exe /C copy.bat
@@ -41,12 +45,21 @@ logo_tile.rel: logo_tile.c
 #sel_tile.rel: sel_tile.c 
 #	sdcc.exe $(CFLAGS) --constseg BANK_D3 sel_tile.c
 
+Data0_0.rel: Data0_0.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD1 Data0_0.c
+Data0_1.rel: Data0_1.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD2 Data0_1.c
+Data0_2.rel: Data0_2.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD3 Data0_2.c
+Data0_3.rel: Data0_3.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD4 Data0_3.c
+
 Data1.rel: Data1.c
-	sdcc.exe $(CFLAGS) --constseg BANK_MD1 Data1.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD5 Data1.c
 Data2.rel: Data2.c
-	sdcc.exe $(CFLAGS) --constseg BANK_MD2 Data2.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD6 Data2.c
 Data3.rel: Data3.c
-	sdcc.exe $(CFLAGS) --constseg BANK_MD3 Data3.c
+	sdcc.exe $(CFLAGS) --constseg BANK_MD7 Data3.c
 
 crt0b_sms.rel: crt0b_sms.s
 	sdasz80.exe -g -y -o crt0b_sms.rel crt0b_sms.s
