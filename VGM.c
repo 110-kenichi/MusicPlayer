@@ -237,7 +237,7 @@ static inline void SeekToLoop(unsigned short position)
         SMS_mapROMBank(data_current_bankno);
         data_current_position = music_data[music_current_no].loop_bank_ofset;
         data_current_vgmData_ptr = music_data[music_current_no].data;
-        data_current_vgmData_ptr += data_current_position - 1;
+        data_current_vgmData_ptr += data_current_position;
     }
 }
 
@@ -484,7 +484,7 @@ void VGMUpdate()
     }
 }
 
-void PrintLoopMode()
+static void PrintLoopMode()
 {
     switch(loop_mode)
     {
@@ -532,10 +532,12 @@ void InitVGM()
     PrintText(music_data[music_selected_no].title,0,14);
     PrintText("cccccccecccccccccccccccceccccccc",0,15);
     for(int i=0;i<8;i++)
-        PrintText("d                d",7,16+i);
+        PrintText("dkkkkkkkkkkkkkkkkd",7,16+i);
 
     // PrintChar('f',3,16);
     // PrintChar('g',3,18);
+
+    PrintText(" h j i ",0,17);
 
     PrintText("TIME",25,16);
     InitTime();
@@ -579,7 +581,7 @@ static void drawLevel(struct OutputData *odp, char x)
     }else
     {
         for(int y = lvol;y>=vol;y--)
-            SetTileatXY(x, 23-y, 0);
+            SetTileatXY(x, 23-y, 75);
     }
     odp->last_volume = tv;
     if(tv < 0xf)
